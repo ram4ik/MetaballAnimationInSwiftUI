@@ -10,11 +10,75 @@ import SwiftUI
 struct Home: View {
     
     @State var dragOffset: CGSize = .zero
+    @State var startAnimation: Bool = false
+    
+    @State var type: String = "Single"
     
     var body: some View {
         VStack {
-            SingleMetaBall()
+            Text("Metaball Animation")
+                .font(.title)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(15)
+            
+            Picker(selection: $type) {
+                Text("Metaball")
+                    .tag("Single")
+                Text("Clubbed")
+                    .tag("Clubbed")
+            } label: {
+                
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 15)
+            
+            if type == "Single" {
+                SingleMetaBall()
+            } else {
+                ClubbedView()
+            }
         }
+    }
+    
+    @ViewBuilder
+    func ClubbedView() -> some View {
+        Rectangle()
+            .fill(.linearGradient(colors: [Color("Gradient1"), Color("Gradient2")], startPoint: .top, endPoint: .bottom))
+            .mask {
+                TimelineView(.animation(minimumInterval: 3.6, paused: false)) { _ in
+                    Canvas {context, size in
+                        context.addFilter(.alphaThreshold(min: 0.5, color: .white))
+                        context.addFilter(.blur(radius: 40))
+                        context.drawLayer { ctx in
+                            for index in 1...15 {
+                                if let resolvedView = context.resolveSymbol(id: index) {
+                                    ctx.draw(resolvedView, at: CGPoint(x: size.width / 2, y: size.height / 2))
+                                }
+                            }
+                        }
+                    } symbols: {
+                        ForEach(1...15, id: \.self) { index in
+                            let offset = (startAnimation ? CGSize(width: .random(in: -180...180), height: .random(in: -240...240)) : .zero)
+                            ClubbedRoundedRectangle(offset: offset)
+                                .tag(index)
+                        }
+                    }
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                startAnimation.toggle()
+            }
+    }
+    
+    @ViewBuilder
+    func ClubbedRoundedRectangle(offset: CGSize) -> some View {
+        RoundedRectangle(cornerRadius: 30, style: .continuous)
+            .fill(.white)
+            .frame(width: 120, height: 120)
+            .offset(offset)
+            .animation(.easeInOut(duration: 4), value: offset)
     }
     
     @ViewBuilder
